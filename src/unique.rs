@@ -1,0 +1,92 @@
+use std::collections::{hash_map::DefaultHasher, HashMap};
+use std::hash::Hasher;
+use std::marker::PhantomData;
+
+use super::id::Id;
+
+/// A set of objects.
+/// Keeps all objects while exists.
+/// `Id`s expected to be used like references.
+/// Unique objects are considered to be the same.
+///
+/// # Examples
+///
+/// ```
+/// use objects_pool::PoolUnique;
+///
+/// let mut pool = PoolUnique::default();
+///
+/// let k_abc = pool.insert("abc".to_string());
+/// let k_bcd = pool.insert("bcd".to_string());
+/// let k_abc_other = pool.insert("abc".to_string());
+///
+/// assert!(pool.get(k_abc).as_str() == "abc");
+/// assert!(k_abc == k_abc_other);
+/// assert!(k_abc != k_bcd);
+///
+/// match pool.get(k_bcd).as_str() {
+///     "bcd" => {}
+///     _ => panic!()
+/// }
+/// ```
+///
+/// # Caveats
+///
+/// `Id` can only be used with set which is gotten from.
+///
+/// Uses `usize::add(1)` as `Id` generator.
+pub struct PoolUnique<Type: Eq + std::hash::Hash> {
+    pool: HashMap<usize, Type>,
+    // To be done: don't use such workaround.
+    used_hashs: HashMap<u64, Vec<usize>>,
+    key: usize,
+}
+
+impl<Type: Eq + std::hash::Hash> PoolUnique<Type> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn get(&self, id: Id<Type>) -> &Type {
+        self.pool
+            .get(&id.id)
+            .expect("`Id` can only be used with pool that gave it")
+    }
+
+    #[must_use = "`Id` is the only way to access stored `value`"]
+    pub fn insert(&mut self, value: Type) -> Id<Type> {
+        let mut hasher = DefaultHasher::new();
+        value.hash(&mut hasher);
+        let hash = hasher.finish();
+        if let Some(already) = self.contains(hash, &value) {
+            return already;
+        }
+
+        self.key += 1;
+        self.pool.insert(self.key, value);
+        self.used_hashs.entry(hash).or_default().push(self.key);
+        Id {
+            id: self.key,
+            _type: PhantomData,
+        }
+    }
+
+    pub fn contains(&self, hash: u64, value: &Type) -> Option<Id<Type>> {
+        let _type = PhantomData;
+        self.used_hashs
+            .get(&hash)
+            .map(|v| v.iter().find(|id| self.pool.get(&id).unwrap() == value))
+            .flatten()
+            .map(|&id| Id { id, _type })
+    }
+}
+
+impl<Type: Eq + std::hash::Hash> Default for PoolUnique<Type> {
+    fn default() -> Self {
+        Self {
+            pool: Default::default(),
+            used_hashs: Default::default(),
+            key: 0,
+        }
+    }
+}
