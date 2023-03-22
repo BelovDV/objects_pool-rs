@@ -14,7 +14,7 @@ It was written for two use cases:
 ## Example
 
 ```rust
-use objects_pool::PoolUnique;
+use objects_pool::{Pool as _, Unique as PoolUnique};
 
 fn test_with_string() {
     let mut pool = PoolUnique::default();

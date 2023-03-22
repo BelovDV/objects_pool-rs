@@ -1,8 +1,8 @@
-use objects_pool::PoolSimple;
+use objects_pool::{Pool as _, Simple};
 
 #[test]
 fn simple_str() {
-    let mut pool = PoolSimple::default();
+    let mut pool = Simple::default();
     let abc = pool.insert("abc");
     let bcd = pool.insert("bcd");
 
@@ -20,7 +20,7 @@ fn simple_str() {
 
 #[test]
 fn simple_string() {
-    let mut pool = PoolSimple::default();
+    let mut pool = Simple::default();
     let abc = pool.insert("abc".to_string());
     let bcd = pool.insert("bcd".to_string());
 
@@ -40,7 +40,7 @@ fn simple_string() {
 fn simple_t() {
     struct T;
 
-    let mut pool = PoolSimple::default();
+    let mut pool = Simple::default();
     let k1 = pool.insert(T);
     let k2 = pool.insert(T);
 

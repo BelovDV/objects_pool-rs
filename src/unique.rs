@@ -3,6 +3,7 @@ use std::hash::Hasher;
 use std::marker::PhantomData;
 
 use super::id::Id;
+use super::Pool;
 
 /// A set of objects.
 /// Keeps all objects while exists.
@@ -12,7 +13,7 @@ use super::id::Id;
 /// # Examples
 ///
 /// ```
-/// use objects_pool::PoolUnique;
+/// use objects_pool::{Pool as _, Unique as PoolUnique};
 ///
 /// let mut pool = PoolUnique::default();
 ///
@@ -35,26 +36,23 @@ use super::id::Id;
 /// `Id` can only be used with set which is gotten from.
 ///
 /// Uses `usize::add(1)` as `Id` generator.
-pub struct PoolUnique<Type: Eq + std::hash::Hash> {
+pub struct Unique<Type: Eq + std::hash::Hash> {
     pool: HashMap<usize, Type>,
     // To be done: don't use such workaround.
     used_hashs: HashMap<u64, Vec<usize>>,
     key: usize,
 }
 
-impl<Type: Eq + std::hash::Hash> PoolUnique<Type> {
-    pub fn new() -> Self {
-        Default::default()
-    }
+impl<Type: Eq + std::hash::Hash> Pool for Unique<Type> {
+    type Type = Type;
 
-    pub fn get(&self, id: Id<Type>) -> &Type {
+    fn get(&self, id: Id<Type>) -> &Type {
         self.pool
             .get(&id.id)
             .expect("`Id` can only be used with pool that gave it")
     }
 
-    #[must_use = "`Id` is the only way to access stored `value`"]
-    pub fn insert(&mut self, value: Type) -> Id<Type> {
+    fn insert(&mut self, value: Type) -> Id<Type> {
         let mut hasher = DefaultHasher::new();
         value.hash(&mut hasher);
         let hash = hasher.finish();
@@ -70,7 +68,9 @@ impl<Type: Eq + std::hash::Hash> PoolUnique<Type> {
             _type: PhantomData,
         }
     }
+}
 
+impl<Type: Eq + std::hash::Hash> Unique<Type> {
     pub fn contains(&self, hash: u64, value: &Type) -> Option<Id<Type>> {
         let _type = PhantomData;
         self.used_hashs
@@ -81,7 +81,7 @@ impl<Type: Eq + std::hash::Hash> PoolUnique<Type> {
     }
 }
 
-impl<Type: Eq + std::hash::Hash> Default for PoolUnique<Type> {
+impl<Type: Eq + std::hash::Hash> Default for Unique<Type> {
     fn default() -> Self {
         Self {
             pool: Default::default(),

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, marker::PhantomData};
 
 use super::id::Id;
+use super::Pool;
 
 /// A set of objects.
 /// Keeps all objects while exists.
@@ -9,7 +10,7 @@ use super::id::Id;
 /// # Examples
 ///
 /// ```
-/// use objects_pool::PoolSimple;
+/// use objects_pool::{Pool as _, Simple as PoolSimple};
 ///
 /// let mut pool = PoolSimple::default();
 ///
@@ -35,24 +36,21 @@ use super::id::Id;
 /// `Id` can only be used with set which is gotten from.
 ///
 /// Uses `usize::add(1)` as `Id` generator.
-pub struct PoolSimple<Type> {
+pub struct Simple<Type> {
     pool: HashMap<usize, Type>,
     key: usize,
 }
 
-impl<Type> PoolSimple<Type> {
-    pub fn new() -> Self {
-        Default::default()
-    }
+impl<Type> Pool for Simple<Type> {
+    type Type = Type;
 
-    pub fn get(&self, id: Id<Type>) -> &Type {
+    fn get(&self, id: Id<Type>) -> &Type {
         self.pool
             .get(&id.id)
             .expect("`Id` can only be used with pool that gave it")
     }
 
-    #[must_use = "`Id` is the only way to access stored `value`"]
-    pub fn insert(&mut self, value: Type) -> Id<Type> {
+    fn insert(&mut self, value: Type) -> Id<Type> {
         self.key += 1;
         self.pool.insert(self.key, value);
         Id {
@@ -62,7 +60,7 @@ impl<Type> PoolSimple<Type> {
     }
 }
 
-impl<Type> Default for PoolSimple<Type> {
+impl<Type> Default for Simple<Type> {
     fn default() -> Self {
         Self {
             pool: Default::default(),

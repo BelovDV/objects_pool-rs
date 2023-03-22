@@ -1,8 +1,8 @@
-use objects_pool::PoolUnique;
+use objects_pool::{Pool as _, Unique};
 
 #[test]
 fn simple_str() {
-    let mut pool = PoolUnique::default();
+    let mut pool = Unique::default();
     let abc = pool.insert("abc");
     let bcd = pool.insert("bcd");
 
@@ -20,7 +20,7 @@ fn simple_str() {
 
 #[test]
 fn simple_string() {
-    let mut pool = PoolUnique::default();
+    let mut pool = Unique::default();
     let abc = pool.insert("abc".to_string());
     let bcd = pool.insert("bcd".to_string());
     let abc_2 = pool.insert("abc".to_string());
@@ -43,7 +43,7 @@ fn simple_t() {
     #[derive(Debug, Hash, PartialEq, Eq)]
     struct T(i32);
 
-    let mut pool = PoolUnique::default();
+    let mut pool = Unique::default();
     let k1 = pool.insert(T(1));
     let k2 = pool.insert(T(2));
     let k1_2 = pool.insert(T(1));
