@@ -47,7 +47,8 @@ fn variadic_unique() {
     assert!(id_abc == id_abc_2); // !
     assert!(id_123 == id_123_c);
     assert!(id_123 == id_123_2); // !
-                                 // assert!(id_abc != id_123);
+
+    // assert!(id_abc != id_123);
 
     assert!(*pool.get_s(id_abc) == "abc");
     assert!(*pool.get_s(id_234) == 234);

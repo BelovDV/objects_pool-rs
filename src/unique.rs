@@ -10,7 +10,7 @@ use super::Pool;
 /// `Id`s expected to be used like references.
 /// Unique objects are considered to be the same.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// use objects_pool::{Pool as _, Unique as PoolUnique};

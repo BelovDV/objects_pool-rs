@@ -12,13 +12,28 @@ pub trait Variant<Container> {
 /// Keeps all objects while exists.
 /// `Id`s expected to be used like references.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
-/// use objects_pool::Variadic;
+/// use objects_pool::{Pool as _, Simple, Variadic, variadic};
 ///
-/// // let mut pool = PoolVarios::default();
+/// variadic!(C: String, i32);
 ///
+/// let mut pool: Variadic<C, Simple<C>> = Default::default();
+///
+/// let id_abc = pool.insert_s("abc".to_string());
+/// let id_123 = pool.insert_s(123);
+///
+/// let id_abc_any = pool.insert(C::String("abc".to_string()));
+/// let id_123_any = pool.insert(C::i32(123));
+///
+/// let id_abc_copy = id_abc;
+/// assert!(id_abc == id_abc_copy);
+/// assert!(id_123_any != id_abc_any);
+/// // id_abc != id_abc_any // These are different types.
+///
+/// assert!(*pool.get_s(id_123) == 123);
+/// assert!(matches!(pool.get(id_abc_any), C::String(_)));
 /// ```
 ///
 /// # Caveats
@@ -31,6 +46,7 @@ pub struct Variadic<Container, InnerPool: Pool<Type = Container>> {
 }
 
 // To be done: may be proc? No, there isn't clear reason for it.
+// To be done: impl `From<Id<ty>>` for `Id<name>`.
 #[macro_export]
 macro_rules! variadic {
     ($name:ident: $($ty:ident),*) => {
@@ -70,6 +86,7 @@ macro_rules! variadic {
     };
 }
 
+// To be done: is there a way to not use different names?
 impl<Container, InnerPool: Pool<Type = Container>> Variadic<Container, InnerPool> {
     pub fn get_s<Type: Variant<Container>>(&self, id: Id<Type>) -> &Type {
         let id = Id {

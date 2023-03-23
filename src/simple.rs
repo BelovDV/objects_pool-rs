@@ -7,7 +7,7 @@ use super::Pool;
 /// Keeps all objects while exists.
 /// `Id`s expected to be used like references.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// use objects_pool::{Pool as _, Simple as PoolSimple};
