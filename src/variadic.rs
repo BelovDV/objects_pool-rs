@@ -30,11 +30,45 @@ pub struct Variadic<Container, InnerPool: Pool<Type = Container>> {
     pool: InnerPool,
 }
 
-// To be done: macros. May be proc...
-// #[macro_export]
-// macro_rules! variadic {
-//     () => {};
-// }
+// To be done: may be proc? No, there isn't clear reason for it.
+#[macro_export]
+macro_rules! variadic {
+    ($name:ident: $($ty:ident),*) => {
+        ::objects_pool::variadic!(!enum_simple: $name: $($ty),*);
+        $(::objects_pool::variadic!(!variant_impl: $name: $ty);)*
+    };
+    ($name:ident: $($ty:ident),*; derive($($derive:ident),*)) => {
+        ::objects_pool::variadic!(!enum_derive: $name: $($ty),*; $($derive),*);
+        $(::objects_pool::variadic!(!variant_impl: $name: $ty);)*
+    };
+    (!enum_simple: $name:ident: $($ty:ident),*) => {
+        #[allow(non_camel_case_types)]
+        pub enum $name {
+            $($ty($ty)),*
+        }
+    };
+    (!enum_derive: $name:ident: $($ty:ident),*; $($derive:ident),*) => {
+        #[allow(non_camel_case_types)]
+        #[derive($($derive),*)]
+        pub enum $name {
+            $($ty($ty)),*
+        }
+    };
+    (!variant_impl: $name:ident: $ty:ident) => {
+        impl ::objects_pool::Variant<$name> for $ty {
+            fn pack(self) -> $name {
+                $name::$ty(self)
+            }
+
+            fn unpack(from: &$name) -> &Self {
+                match from {
+                    $name::$ty(s) => s,
+                    _ => unreachable!(),
+                }
+            }
+        }
+    };
+}
 
 impl<Container, InnerPool: Pool<Type = Container>> Variadic<Container, InnerPool> {
     pub fn get_s<Type: Variant<Container>>(&self, id: Id<Type>) -> &Type {
