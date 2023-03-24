@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 
 use super::id::Id;
 use super::Pool;
+use super::Storable;
 
 /// A set of objects.
 /// Keeps all objects while exists.
@@ -36,39 +37,14 @@ use super::Pool;
 /// `Id` can only be used with set which is gotten from.
 ///
 /// Uses `usize::add(1)` as `Id` generator.
-pub struct Unique<Type: Eq + std::hash::Hash> {
+pub struct Unique<Type: Storable<Self> + Eq + std::hash::Hash> {
     pool: HashMap<usize, Type>,
     // To be done: don't use such workaround.
     used_hashs: HashMap<u64, Vec<usize>>,
     key: usize,
 }
 
-impl<Type: Eq + std::hash::Hash> Pool for Unique<Type> {
-    type Type = Type;
-
-    fn get(&self, id: Id<Type>) -> &Type {
-        self.pool
-            .get(&id.id)
-            .expect("`Id` can only be used with pool that gave it")
-    }
-
-    fn insert(&mut self, value: Type) -> Id<Type> {
-        let mut hasher = DefaultHasher::new();
-        value.hash(&mut hasher);
-        let hash = hasher.finish();
-        if let Some(already) = self.contains(hash, &value) {
-            return already;
-        }
-
-        self.key += 1;
-        self.pool.insert(self.key, value);
-        self.used_hashs.entry(hash).or_default().push(self.key);
-        Id {
-            id: self.key,
-            _type: PhantomData,
-        }
-    }
-}
+impl<Type: Eq + std::hash::Hash> Pool<Type> for Unique<Type> {}
 
 impl<Type: Eq + std::hash::Hash> Unique<Type> {
     pub fn contains(&self, hash: u64, value: &Type) -> Option<Id<Type>> {
@@ -88,5 +64,27 @@ impl<Type: Eq + std::hash::Hash> Default for Unique<Type> {
             used_hashs: Default::default(),
             key: 0,
         }
+    }
+}
+
+impl<T: Eq + std::hash::Hash> Storable<Unique<T>> for T {
+    fn store(self, pool: &mut Unique<T>) -> Id<Self> {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        let hash = hasher.finish();
+        if let Some(already) = pool.contains(hash, &self) {
+            return already;
+        }
+
+        pool.key += 1;
+        pool.pool.insert(pool.key, self);
+        pool.used_hashs.entry(hash).or_default().push(pool.key);
+        Id::new(pool.key)
+    }
+
+    fn access(pool: &Unique<T>, id: Id<Self>) -> &Self {
+        pool.pool
+            .get(&id.id)
+            .expect("`Id` can only be used with pool that gave it")
     }
 }

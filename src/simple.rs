@@ -1,4 +1,6 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::collections::HashMap;
+
+use super::Storable;
 
 use super::id::Id;
 use super::Pool;
@@ -36,35 +38,32 @@ use super::Pool;
 /// `Id` can only be used with set which is gotten from.
 ///
 /// Uses `usize::add(1)` as `Id` generator.
-pub struct Simple<Type> {
+pub struct Simple<Type: Storable<Self>> {
     pool: HashMap<usize, Type>,
     key: usize,
 }
 
-impl<Type> Pool for Simple<Type> {
-    type Type = Type;
+impl<Type: Storable<Self>> Pool<Type> for Simple<Type> {}
 
-    fn get(&self, id: Id<Type>) -> &Type {
-        self.pool
-            .get(&id.id)
-            .expect("`Id` can only be used with pool that gave it")
-    }
-
-    fn insert(&mut self, value: Type) -> Id<Type> {
-        self.key += 1;
-        self.pool.insert(self.key, value);
-        Id {
-            id: self.key,
-            _type: PhantomData,
-        }
-    }
-}
-
-impl<Type> Default for Simple<Type> {
+impl<Type: Storable<Self>> Default for Simple<Type> {
     fn default() -> Self {
         Self {
             pool: Default::default(),
             key: 0,
         }
+    }
+}
+
+impl<T> Storable<Simple<T>> for T {
+    fn store(self, pool: &mut Simple<T>) -> Id<Self> {
+        pool.key += 1;
+        pool.pool.insert(pool.key, self);
+        Id::new(pool.key)
+    }
+
+    fn access(pool: &Simple<T>, id: Id<Self>) -> &Self {
+        pool.pool
+            .get(&id.id)
+            .expect("`Id` can only be used with pool that gave it")
     }
 }
