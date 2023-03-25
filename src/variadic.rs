@@ -22,6 +22,7 @@ pub trait Variant<Container> {
 ///
 /// let mut pool: Variadic<C, Simple<C>> = Default::default();
 ///
+/// // With feature `fn_overload` using `pool.insert(...)` is possible.
 /// let id_abc = pool.insert_s("abc".to_string());
 /// let id_123 = pool.insert_s(123);
 ///
@@ -88,23 +89,27 @@ macro_rules! variadic {
     };
 }
 
+impl<C> Variant<C> for C {
+    fn pack(self) -> C {
+        self
+    }
+
+    fn unpack(from: &C) -> &Self {
+        from
+    }
+}
+
 // To be done: is there a way to not use different names? UPD: in process.
 impl<Container: Storable<InnerPool>, InnerPool: Pool<Container>> Variadic<Container, InnerPool> {
     pub fn get_s<Type: Variant<Container>>(&self, id: Id<Type>) -> &Type {
-        let id = Id {
-            id: id.id,
-            _type: PhantomData,
-        };
+        let id = Id::new(id.id);
         Type::unpack(self.pool.get(id))
     }
 
     pub fn insert_s<Type: Variant<Container>>(&mut self, value: Type) -> Id<Type> {
         let packed = Type::pack(value);
         let id = self.pool.insert(packed);
-        Id {
-            id: id.id,
-            _type: PhantomData,
-        }
+        Id::new(id.id)
     }
 }
 
@@ -125,7 +130,7 @@ impl<Container: Storable<InnerPool>, InnerPool: Pool<Container> + Default> Defau
     }
 }
 
-impl<Container: Storable<InnerPool>, InnerPool: Pool<Container>>
+impl<Container: Storable<InnerPool> + Variant<Container>, InnerPool: Pool<Container>>
     Storable<Variadic<Container, InnerPool>> for Container
 {
     fn store(self, pool: &mut Variadic<Container, InnerPool>) -> Id<Self> {
@@ -133,6 +138,19 @@ impl<Container: Storable<InnerPool>, InnerPool: Pool<Container>>
     }
 
     fn access(pool: &Variadic<Container, InnerPool>, id: Id<Self>) -> &Self {
-        pool.pool.get(id)
+        pool.pool.get(Id::new(id.id))
+    }
+}
+
+#[cfg(feature = "fn_overload")]
+impl<Container: Storable<InnerPool>, InnerPool: Pool<Container>, Type: Variant<Container>>
+    Storable<Variadic<Container, InnerPool>> for Type
+{
+    default fn store(self, pool: &mut Variadic<Container, InnerPool>) -> Id<Self> {
+        pool.insert_s(self)
+    }
+
+    default fn access(pool: &Variadic<Container, InnerPool>, id: Id<Self>) -> &Self {
+        pool.get_s(id)
     }
 }

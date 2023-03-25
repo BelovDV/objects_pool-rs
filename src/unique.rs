@@ -1,6 +1,5 @@
 use std::collections::{hash_map::DefaultHasher, HashMap};
 use std::hash::Hasher;
-use std::marker::PhantomData;
 
 use super::id::Id;
 use super::Pool;
@@ -48,12 +47,11 @@ impl<Type: Eq + std::hash::Hash> Pool<Type> for Unique<Type> {}
 
 impl<Type: Eq + std::hash::Hash> Unique<Type> {
     pub fn contains(&self, hash: u64, value: &Type) -> Option<Id<Type>> {
-        let _type = PhantomData;
         self.used_hashs
             .get(&hash)
             .map(|v| v.iter().find(|id| self.pool.get(&id).unwrap() == value))
             .flatten()
-            .map(|&id| Id { id, _type })
+            .map(|&id| Id::new(id))
     }
 }
 

@@ -3,11 +3,11 @@ use std::marker::PhantomData;
 pub struct Id<Type> {
     // To be done: allow u32.
     pub(crate) id: usize,
-    pub(crate) _type: PhantomData<Type>,
+    _type: PhantomData<Type>,
 }
 
 impl<Type> Id<Type> {
-    pub fn new(id: usize) -> Self {
+    pub(crate) fn new(id: usize) -> Self {
         Self {
             id,
             _type: PhantomData,

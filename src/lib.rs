@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "fn_overload", feature(specialization))]
+
 mod id;
 
 pub use id::Id;
@@ -14,12 +16,12 @@ pub use variadic::{Variadic, Variant};
 
 pub trait Pool<Type: Storable<Self>>: Sized {
     #[must_use = "`Id` is the only way to access stored `value`"]
-    fn insert(&mut self, value: Type) -> Id<Type> {
-        Type::store(value, self)
+    fn insert<T: Storable<Self>>(&mut self, value: T) -> Id<T> {
+        T::store(value, self)
     }
 
-    fn get(&self, id: Id<Type>) -> &Type {
-        Type::access(self, id)
+    fn get<T: Storable<Self>>(&self, id: Id<T>) -> &T {
+        T::access(self, id)
     }
 }
 

@@ -60,3 +60,25 @@ fn variadic_unique() {
     assert!(matches!(pool.get(id_c_cs), U::StaticStr(_)));
     assert!(matches!(pool.get(id_c_ci), U::i32(12)));
 }
+
+#[cfg(feature = "fn_overload")]
+mod test_nightly {
+    use objects_pool::{variadic, Pool as _, Unique, Variadic};
+
+    type StaticStr = &'static str;
+    variadic!(U: StaticStr, i32; derive(Hash, PartialEq, Eq));
+
+    #[test]
+    fn variadic_unstable() {
+        let mut pool: Variadic<U, Unique<U>> = Default::default();
+
+        let id_abc = pool.insert("abc");
+        let id_abc_2 = pool.insert("abc");
+        assert!(id_abc == id_abc_2);
+
+        let id_abc_c = pool.insert(U::StaticStr("abc"));
+        // assert!(id_abc == id_abc_c);
+        let id_123_c = pool.insert(U::i32(123));
+        assert!(id_abc_c != id_123_c);
+    }
+}
