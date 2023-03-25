@@ -51,3 +51,24 @@ fn unique_t() {
     assert!(k1 != k2);
     assert!(k1 == k1_2);
 }
+
+#[test]
+fn example_dict() {
+    let mut pool = Unique::default();
+
+    let words: Vec<_> = ["a", "b", "c", "a", "b", "d"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+
+    let ids: Vec<_> = words.iter().map(|w| pool.insert(w)).collect();
+
+    for i in 0..ids.len() {
+        for j in i + 1..ids.len() {
+            match (i, j) {
+                (0, 3) | (1, 4) => assert_eq!(words[i], words[j]),
+                _ => assert_ne!(words[i], words[j]),
+            }
+        }
+    }
+}

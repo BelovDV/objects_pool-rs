@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use super::Variant;
+
 pub struct Id<Type> {
     // To be done: allow u32.
     pub(crate) id: usize,
@@ -36,4 +38,8 @@ impl<T> std::fmt::Debug for Id<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("IdSimple({})", self.id))
     }
+}
+
+pub fn id_cast<Container, Var: Variant<Container>>(from: Id<Var>) -> Id<Container> {
+    Id::new(from.id)
 }

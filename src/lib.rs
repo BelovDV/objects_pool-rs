@@ -2,7 +2,7 @@
 
 mod id;
 
-pub use id::Id;
+pub use id::{id_cast, Id};
 
 mod simple;
 mod unique;

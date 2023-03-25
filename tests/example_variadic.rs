@@ -1,4 +1,4 @@
-use objects_pool::{variadic, Pool as _, Simple, Unique, Variadic};
+use objects_pool::{id_cast, variadic, Id, Pool as _, Simple, Unique, Variadic};
 
 variadic!(C: String, i32);
 
@@ -48,7 +48,9 @@ fn variadic_unique() {
     assert!(id_123 == id_123_c);
     assert!(id_123 == id_123_2); // !
 
-    // assert!(id_abc != id_123);
+    let id_abc_gen: Id<U> = id_cast(id_abc);
+    let id_123_gen: Id<U> = id_cast(id_123);
+    assert!(id_123_gen != id_abc_gen);
 
     assert!(*pool.get_s(id_abc) == "abc");
     assert!(*pool.get_s(id_234) == 234);
@@ -63,22 +65,44 @@ fn variadic_unique() {
 
 #[cfg(feature = "fn_overload")]
 mod test_nightly {
-    use objects_pool::{variadic, Pool as _, Unique, Variadic};
+    use objects_pool::{id_cast, variadic, Id, Pool as _, Unique, Variadic};
 
-    type StaticStr = &'static str;
-    variadic!(U: StaticStr, i32; derive(Hash, PartialEq, Eq));
+    variadic!(Object: String, i32; derive(Hash, PartialEq, Eq));
+
+    type Pool = Variadic<Object, Unique<Object>>;
+
+    fn insert_s_gen(pool: &mut Pool, value: &str) -> Id<Object> {
+        id_cast(pool.insert(value.to_string()))
+    }
+    fn insert_i_gen(pool: &mut Pool, value: i32) -> Id<Object> {
+        id_cast(pool.insert(value))
+    }
 
     #[test]
-    fn variadic_unstable() {
-        let mut pool: Variadic<U, Unique<U>> = Default::default();
+    fn variadic_example_nightly() {
+        let mut pool: Pool = Default::default();
 
-        let id_abc = pool.insert("abc");
-        let id_abc_2 = pool.insert("abc");
-        assert!(id_abc == id_abc_2);
+        let id_a = pool.insert("a".to_string());
+        let id_a_2 = pool.insert("a".to_string());
+        let id_1 = pool.insert(1);
+        assert_eq!(id_a, id_a_2);
+        // assert_ne!(id_a, id_1); // Different types.
+        let id_a_gen: Id<Object> = id_cast(id_a);
+        let id_1_gen: Id<Object> = id_cast(id_1);
+        assert_ne!(id_a_gen, id_1_gen);
 
-        let id_abc_c = pool.insert(U::StaticStr("abc"));
-        // assert!(id_abc == id_abc_c);
-        let id_123_c = pool.insert(U::i32(123));
-        assert!(id_abc_c != id_123_c);
+        let v = vec![
+            insert_s_gen(&mut pool, "b"),
+            insert_s_gen(&mut pool, "c"),
+            insert_i_gen(&mut pool, 1),
+            insert_s_gen(&mut pool, "a"),
+            insert_i_gen(&mut pool, 2),
+        ];
+        assert!(v[0] != v[1]);
+        assert!(v[2] == id_1_gen);
+        assert!(v[3] == id_a_gen);
+
+        assert!(matches!(pool.get(v[4]), Object::i32(2)));
+        assert!(matches!(pool.get(v[3]), Object::String(_)));
     }
 }

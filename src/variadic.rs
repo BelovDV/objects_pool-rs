@@ -99,7 +99,6 @@ impl<C> Variant<C> for C {
     }
 }
 
-// To be done: is there a way to not use different names? UPD: in process.
 impl<Container: Storable<InnerPool>, InnerPool: Pool<Container>> Variadic<Container, InnerPool> {
     pub fn get_s<Type: Variant<Container>>(&self, id: Id<Type>) -> &Type {
         let id = Id::new(id.id);
