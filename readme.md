@@ -1,17 +1,27 @@
 # Objects pool
 
-Store objects in pool and manipulate their ids.
+Store objects (several different types) in pool and manipulate their ids. Main feature - allow creating ids for one object, some of them know about actual type, some not.
 
-Is there common implementation of this (on [crates.io](crates.io))?
+Is there common implementation of this (on [crates.io](crates.io))? There are allocators (references - not id), there are arenas for single type or which id doesn't know actual type - this crate exists for another case.
 
 How should it be named?
 
+## State
+
+This is in **early development state** - for now only interface matters. Performance is mostly (except asymptotics) ignored.
+
 ## Purpose
 
-It was written for two use cases:
+It was written for two use cases. One is simple (and there are better crates to do this) - switch from `String` identficators to `Id` - just integer.
 
-- switch from `String` identficators to `Id` - just integer,
-- simple work with DAGs.
+Other - simple work with persistent 'DAG' which stores several complicated types. Features:
+- don't bother about lifetimes,
+- don't adjust types to work with DAG, just use `Id` field in them,
+- one-line macro (list desired types to be in DAG) to use pool,
+- don't clutter up code with checking `get` function - all `Id` are always valid,
+- use generalized `Id` for object of any type from DAG (and `match` to work with actual value),
+- use specific `Id` to enable compile-time type checking if reference to specific type required,
+- don't clutter up code with unnecessary casting - if `Id` know object type then `get` will return reference with required type.
 
 ## Example
 
